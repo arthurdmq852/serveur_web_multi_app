@@ -1,10 +1,10 @@
 body, html {
-    background-color: rgb(0, 0, 0);
+    background-color: #7f7f7f;
     margin: 0;
     padding: 0;
     height: 100%;
-    font-family: Arial, sans-serif;
-    overflow: hidden;
+    font-family:SoDoSans,Helvetica Neue,Helvetica,Arial,sans-serif;
+    overflow-x: hidden;
 } 
 
 .main-container {
@@ -20,15 +20,23 @@ body, html {
     background-repeat: no-repeat;
 }
 
+.about-text {
+    color: #000000;
+    font-size: 1.2rem;
+    max-width: 600px; 
+    text-align: center;
+    line-height: 1.5;     
+    margin: 0 20px;
+}
+
 .main-title {
     font-family: 'Arial'; 
-    color: #ffffff;
+    color: #000000;
     font-size: 4rem;
     margin-top: 0;
-    margin-bottom: 50px; /* Adds 50px of empty space between the text and the buttons */
+    margin-bottom: 50px;
     text-align: center;
     font-weight: 900;
-    text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
 }
 
 .button-group {
@@ -40,18 +48,18 @@ body, html {
 
 .app-button {
     text-decoration: none;
-    color: rgb(0, 0, 0);
-    background-color: #ffffff;
+    color: rgb(255, 255, 255);
+    background-color: transparent;
     padding: 20px 40px;
     font-size: 1.2rem;
     font-weight: bold;
+    border: 3px solid white;
     border-radius: 50px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: background-color 0.3s ease;
 }
 
 .app-button:hover {
-    background-color: #b8b8b8;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    background-color: rgba(0, 0, 0, 0.1);
     cursor: pointer;
 }
 
@@ -65,21 +73,25 @@ body, html {
     padding: 20px;
     box-sizing: border-box;
     z-index: 100;
+    background-color: #ffffff; 
+    background-size: 100000px;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+
 }
 
 .nav-button {
     text-decoration: none;
-    color: white;
+    color: rgb(0, 0, 0);
+    border: 2px solid rgb(0, 0, 0);
     margin-left: 15px;
     padding: 10px 20px;
     font-size: 0.9rem;
-    background-color: rgba(255, 255, 255, 0.236); 
+    background-color: transparent;
     border-radius: 50px;
     transition: all 0.3s ease;
 }
 
 .nav-button:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-color: white;
-    transform: translateY(3px);
+    background-color: rgba(0, 0, 0, 0.2);
+    border-color: rgb(0, 0, 0);
 }
