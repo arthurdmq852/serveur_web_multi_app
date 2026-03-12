@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gérer les applications</title>
+    <link rel="stylesheet" href="templates/static/styles.css">
+    <link rel="icon" type="image/x-icon" href="templates/images/internet.ico">
+</head>
+
+<body>
+    <header class="top-nav">
+        <a href="index.html" class="manage-btn">Retour à l'accueil</a>
+    </header>
+
+    <div class="admin-container">
+        <h2>Ajouter une App</h2>
+        <input type="text" id="new-app-name" placeholder="Nom de l'application">
+        <input type="text" id="new-app-url" placeholder="Lien URL (ex: https://...)">
+        <button id="add-btn" class="admin-btn">Ajouter</button>
+        
+        <hr style="margin: 30px 0;">
+
+        <h2>Supprimer une App</h2>
+        <select id="delete-app-select"></select>
+        <button id="delete-btn" class="admin-btn">Supprimer</button>
+    </div>
+    
+    <script src="templates/static/manage.js"></script>
+</body>
+</html>
