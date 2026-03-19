@@ -3,8 +3,8 @@ const deleteBtn = document.getElementById('delete-btn');
 const deleteSelect = document.getElementById('delete-app-select');
 
 let myApps = JSON.parse(localStorage.getItem('savedApps')) || [
-    { name: "WordPress", url: "#" },
-    { name: "App 2", url: "#" }
+    { name: "WordPress", url: "/wordpress/" },
+    { name: "NodeJS", url: "/nodejs/" }
 ];
 
 function updateDeleteList() {
