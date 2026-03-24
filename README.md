@@ -1,32 +1,114 @@
-Documentation – Serveur Web Multi Applications
-Description
+# Documentation – Serveur Web Multi Applications 
+## Zyad LAOUANI, Arthur DEMARCQ, Louis GODARD
+Description du projet
 
 Ce projet permet d’héberger plusieurs applications web sur un seul serveur, en utilisant des sous-domaines distincts et en assurant leur accessibilité via HTTPS.
 
-L’objectif est de centraliser le déploiement d’applications développées avec différentes technologies (ex : WordPress, Node.js), tout en garantissant sécurité, performance et simplicité d’administration.
+L’objectif est de centraliser le déploiement d’applications développées avec différentes technologies, tout en garantissant sécurité, performance et simplicité d’administration.
 
-Objectifs
+### Objectifs du projet
 
 Ce projet doit permettre d'héberger plusieurs applications sur un même serveur, d'utiliser un reverse proxy pour gérer les flux, de sécuriser les accès via HTTPS (certificats SSL/TLS), de gérer les sous-domaines pour chaque application et de faciliter l’ajout et la suppression d’applications
 
-Voici l'architecture du projet
+### Présentation du projet
 
-L’architecture repose sur un serveur web (Apache2), un reverse proxy (recommandé : Nginx), Plusieurs applications (Node.js, WordPress), un système de certificats SSL (Tailscale).
 
-Illustration de l’interface :
+### Prérequis:
 
-Prérequis:
-
-Avant de commencer, assurez-vous d’avoir une machine virtuelle ou serveur Linux (Ubuntu recommandé), un accès root ou sudo, un nom de domaine ou sous-domaine (optionnel mais recommandé)
-
-Ports ouverts : 80 (HTTP) et 443 (HTTPS)
+Pour commencer, on a besoin de deux machines virtuelles (une qui va servir de routeur, une en host-only utilisée pour héberger le site web)  
 
 Pour l'installation suivez ces étapes
 
-Tous d'abord l'installation d’Apache2 avec:
+### Manipulations pour Linux 
 
-sudo apt update
-sudo apt install apache2
+Tout d'abord, on va paramétrer le site web avec Nginx, on commence par l'installer avec
+
+```
+sudo apt install nginx
+```
+
+On va également avoir besoin de PHP car Nginx n'a pas de module intégré pour le gérer.
+
+```
+sudo apt install php-fpm php-mysql
+```
+
+Pour plus tard, on va devoir vérifier la version de PHP que l'on, on fait alors
+
+```
+ls /var/run/php/
+```
+
+<img src=img-doc/php-version.png>
+
+Pour continuer, on va modifier le fichier de configuration qu'utilise Nginx pou
+```
+server {
+    listen 80;
+    server_name vm-roueur1.tail66b3dd.ts.net;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name vm-roueur1.tail66b3dd.ts.net;
+
+    ssl_certificate /etc/ssl/certs/serveur.crt;
+    ssl_certificate_key /etc/ssl/private/serveur.key;
+
+    root /var/www/html;
+
+    index index.html index.php;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location /wordpress {
+        try_files $uri $uri/ /wordpress/index.php?$args;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+    }
+
+    location /nodejs_app/ {
+        proxy_pass http://localhost:3000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+```
+
+Une fois que la configuration a été verifiée avec `sudo nginx -t`, on peut relancer nginx `(sudo systemctl restart nginx)`
+
+
+On ajoute les fichiers de notre site
+
+<img src=img-doc/files.png>
+
+Afin que l'on puisse se connecter depuis un autre ordinateur qui n'est pas sur le même réseau, on utilise ici Tailscale
+
+On 
+
+<img src=img-doc/tailscale.png>
+
+
+
+
+
+
+
+
+
+
+
 
 Ensuite l'installation de Node.js avec:
 sudo apt install nodejs npm
@@ -35,21 +117,14 @@ Vérification :
 
 node -v
 npm -v
-3. Configuration d’Apache
 
-Le fichier principal de configuration se trouve ici :
-
-/etc/apache2/apache2.conf
-
-Tu peux également gérer les sites via :
-
-/etc/apache2/sites-available/
 4. (Recommandé) Installation de Nginx pour le Reverse Proxy
 sudo apt install nginx
 Configuration du Reverse Proxy
 
 Exemple de configuration Nginx :
 
+```
 server {
     listen 80;
     server_name vm-routeur1.tail66b3dd.ts.net;
@@ -67,6 +142,7 @@ server {
         proxy_pass http://localhost:3000;
     }
 }
+```
 
 Ici :
 
@@ -140,3 +216,33 @@ Sécurisation HTTPS
 Gestion simplifiée des applications
 
 Architecture moderne avec reverse proxy
+
+
+## Ajout d'applications
+
+Pour tester notre gestion d'applications, on va utiliser WordPress & NodeJS
+
+### WordPress
+
+Afin d'ajouter WordPress,
+<img src=img-doc/wordpress.png>
+
+### NodeJS
+
+cd /var/www/html/nodejs_app
+nano app.js
+
+const http = require('http');
+const port = 3000;
+
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Hello from Node.js!\n');
+});
+
+server.listen(port, () => {
+  console.log(`Server running at port ${port}`);
+});
+
+<img src=img-doc/nodejs.png>

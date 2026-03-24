@@ -6,7 +6,7 @@ function chargerApps() {
     if (!mesApps) {
         mesApps = [
             { name: "WordPress", url: "/wordpress/" },
-            { name: "NodeJS", url: "/nodejs/" }
+            { name: "NodeJS", url: "/nodejs_app/" }
         ];
     }
 
