@@ -10,9 +10,6 @@ L’objectif est de centraliser le déploiement d’applications développées a
 
 Ce projet doit permettre d'héberger plusieurs applications sur un même serveur, d'utiliser un reverse proxy pour gérer les flux, de sécuriser les accès via HTTPS (certificats SSL/TLS), de gérer les sous-domaines pour chaque application et de faciliter l’ajout et la suppression d’applications
 
-### Présentation du projet
-
-
 ### Prérequis:
 
 Pour commencer, on a besoin de deux machines virtuelles (une qui va servir de routeur, une en host-only utilisée pour héberger le site web)  
@@ -21,7 +18,7 @@ Pour l'installation suivez ces étapes
 
 ### Manipulations pour Linux 
 
-Tout d'abord, on va paramétrer le site web avec Nginx, on commence par l'installer avec
+Tout d'abord, on va paramétrer le site web avec Nginx sur la machine serveur, on commence par l'installer avec
 
 ```
 sudo apt install nginx
@@ -41,7 +38,12 @@ ls /var/run/php/
 
 <img src=img-doc/php-version.png>
 
-Pour continuer, on va modifier le fichier de configuration qu'utilise Nginx pou
+
+Ici, on avait préparé le site Web au préalable. On met alors nos fichiers sur `/var/www/html`
+
+<img src=img-doc/files.png>
+
+Pour continuer, on va modifier le fichier de configuration qu'utilise Nginx pour qu'il récupère les fichiers du site dans `/var/www/html`
 ```
 server {
     listen 80;
@@ -71,7 +73,7 @@ server {
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
 
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
     }
 
     location /nodejs_app/ {
@@ -86,76 +88,30 @@ server {
 
 ```
 
-Une fois que la configuration a été verifiée avec `sudo nginx -t`, on peut relancer nginx `(sudo systemctl restart nginx)`
+*(Le fichier `.conf` possède déjà le nom de domaine donné par TailScale, WordPress & NodeJS car on a effectué la documentation après avoir réalisé le projet.)*
 
+Une fois que la configuration a été verifiée avec `sudo nginx -t`, on peut relancer Nginx `(sudo systemctl restart nginx)`
 
-On ajoute les fichiers de notre site
+Si tout marche correctement, on arrive sur notre site avec `localhost` dans le navigateur.
 
-<img src=img-doc/files.png>
+<img src=img-doc/accueil.png>
 
-Afin que l'on puisse se connecter depuis un autre ordinateur qui n'est pas sur le même réseau, on utilise ici Tailscale
+Afin que l'on puisse se connecter depuis un autre ordinateur qui n'est pas sur le même réseau, on utilise ici Tailscale.
 
-On 
+On l'installe avec le guide présent sur le site officiel de Tailscale. Si tout fonctionne correctement sur le serveur, sur un autre PC qui possède également Tailscale, on récupére le lien de la machine serveur.
 
 <img src=img-doc/tailscale.png>
 
+Une fois que les deux machines sont connectées entre elles, lorsque l'on se connecte avec l'IP donné par (ici `100.65.93.87`), on obtient la page du site.
 
 
-
-
-
-
-
-
-
-
-
-Ensuite l'installation de Node.js avec:
-sudo apt install nodejs npm
-
-Vérification :
-
-node -v
-npm -v
-
-4. (Recommandé) Installation de Nginx pour le Reverse Proxy
-sudo apt install nginx
-Configuration du Reverse Proxy
-
-Exemple de configuration Nginx :
-
-```
-server {
-    listen 80;
-    server_name vm-routeur1.tail66b3dd.ts.net;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name vm-routeur1.tail66b3dd.ts.net;
-
-    ssl_certificate /etc/ssl/certs/serveur.crt;
-    ssl_certificate_key /etc/ssl/private/serveur.key;
-
-    location / {
-        proxy_pass http://localhost:3000;
-    }
-}
-```
+# [DÉBUT PARTIE NOM DE DOMAINE + CERT]
 
 Ici :
 
 Le port 3000 correspond à une app Node.js, vous pouvez changer selon vos applications
 
 Sécurité HTTPS
-
-Pour sécuriser les connexions il y a deux possibilités: La première : Let’s Encrypt (recommandé); pour se faire:
-
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx
-
-Sinon deuxième possibilité: Certificats manuels
 
 Placer les fichiers ici :
 
@@ -164,70 +120,47 @@ Placer les fichiers ici :
 Gestion des applications
 
 L’interface permet de gérer dynamiquement les applications :
+# [FIN PARTIE NOM DE DOMAINE + CERT]
 
-Comment marche l'interface de gestion ?
+### Comment marche l'interface de gestion ?
 
-Pour ajouter une application: Renseigner nom de l’application, URL ou port, Cliquer sur Ajouter
+Pour ajouter une application, il faut d'abord l'ajouter dans le dossier du serveur `/var/www/html`. Une fois cela fait, on l'ajoute sur le site web via notre page faite pour. 
 
-Pour supprimer une application: Sélectionner une application dans la liste, Cliquer sur Supprimer
+On peut alors écrire le nom de notre application et indiquer le chemin dans le dossier
 
-Exemple de déploiement:
+<img src=img-doc/manage-page.png>
 
-Application Node.js
-npm install
-node app.js
+Pour supprimer une application, il suffit de la sélectionner dans la liste, et de cliquer sur supprimer.
 
-Accessible via :
+## Exemple d'ajout d'applications
 
-https://node.mondomaine.com
-Application WordPress
-
-Installer Apache + PHP + MySQL
-
-Déployer WordPress dans /var/www/html
-
-Associer à un sous-domaine :
-
-https://wordpress.mondomaine.com
-
-Structure recommandée
-/var/www/
-  ├── wordpress/
-  ├── node-app/
-  └── static-site/
-
-Documentation utilisateur
-
-Pour ajouter une nouvelle application vous devez lancer l’interface, entrer le nom de l’app, entrer l’URL ou port, valider
-
-Pour supprimer vous devez sélectionner l’application, cliquer sur supprimer
-
-Pour les améliorations possibles vous devez faire un Load balancing (répartition de charge), Monitoring (Grafana, Prometheus),    Conteneurisation avec Docker, Authentification des accès (Basic Auth, OAuth), Détails techniques (Reverse Proxy / Sécurité / Routeur)
-
-
-Ce projet permet de mettre en place une solution complète d’hébergement multi-applications, sécurisée et évolutive.
-
-Il répond aux besoins suivants :
-
-Centralisation des services
-
-Sécurisation HTTPS
-
-Gestion simplifiée des applications
-
-Architecture moderne avec reverse proxy
-
-
-## Ajout d'applications
-
-Pour tester notre gestion d'applications, on va utiliser WordPress & NodeJS
+Pour tester notre gestion d'applications, on va ajouter WordPress & NodeJS sur notre site.
 
 ### WordPress
 
-Afin d'ajouter WordPress,
+Afin d'ajouter WordPress, on commence par télécharger sur leur site 
+
+
+<img src=img-doc/wordpress-download.png>
+
+On l'extrait ensuite dans `/var/www/html` et on lui donne les permissions 
+
+```
+sudo chown -R www-data:www-data /var/www/html/wordpress
+sudo chmod -R 755 /var/www/html/wordpress
+```
+
+Puis on l'ajoute sur notre site en mettant le chemin de wordpress
+
+<img src=img-doc/add-wordpress.png>
+
+Si tout marche correctement, lorsque l'on clique sur le bouton WordPress sur la page d'accueil de notre site, on arrive sur la page de configuration de WordPress.
+
 <img src=img-doc/wordpress.png>
 
 ### NodeJS
+
+<!-- Pour ajouter NodeJS, on 
 
 cd /var/www/html/nodejs_app
 nano app.js
@@ -245,4 +178,4 @@ server.listen(port, () => {
   console.log(`Server running at port ${port}`);
 });
 
-<img src=img-doc/nodejs.png>
+<img src=img-doc/nodejs.png> -->
