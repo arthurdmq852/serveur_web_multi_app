@@ -104,23 +104,32 @@ On l'installe avec le guide présent sur le site officiel de Tailscale. Si tout 
 
 Une fois que les deux machines sont connectées entre elles, lorsque l'on se connecte avec l'IP donné par (ici `100.65.93.87`), on obtient la page du site.
 
+## L'ajout & le rôle du Reverse Proxy
 
-# [DÉBUT PARTIE NOM DE DOMAINE + CERT]
+Le reverse proxy a été mis en place avec Nginx pour centraliser et sécuriser l’accès aux applications du serveur. 
 
-Ici :
+Il redirige automatiquement le trafic HTTP vers le HTTPS, puis transmet les requêtes vers les services internes.
 
-Le port 3000 correspond à une app Node.js, vous pouvez changer selon vos applications
+La page principale est envoyée vers un serveur web Nginx local (port 8080), tandis que l’application Node.js est accessible via l'alias /node/ (port 3000).
 
-Sécurité HTTPS
+<img src=img-doc/reverse-proxy-files.png>
 
-Placer les fichiers ici :
+```
+sudo nano /etc/nginx/sites-available/reverse-proxy
 
-/etc/ssl/certs/
-/etc/ssl/private/
-Gestion des applications
+sudo nginx -t
 
-L’interface permet de gérer dynamiquement les applications :
-# [FIN PARTIE NOM DE DOMAINE + CERT]
+sudo systemctl reload nginx
+```
+
+<img src=img-doc/validation-secure.png>
+
+
+Pour valider la mise en place, la syntaxe du fichier a été testée avec la commande `sudo nginx -t` pour éviter toute interruption de service, puis Nginx a été rechargé. 
+
+Le bon fonctionnement est confirmé par l'accès aux différentes applications depuis l'extérieur avec une connexion sécurisée par certificat TLS.
+
+
 
 ### Comment marche l'interface de gestion ?
 
@@ -160,22 +169,84 @@ Si tout marche correctement, lorsque l'on clique sur le bouton WordPress sur la 
 
 ### NodeJS
 
-<!-- Pour ajouter NodeJS, on 
+Pour ajouter NodeJS à notre serveur Web, on commence par se rendre dans notre fichier web
 
+```
+sudo nano /etc/nginx/sites-available/reverse-proxy
+```
+
+Et on ajoute ces lignes de commandes pour que notre site détecte NodeJS
+
+```
+location /nodejs_app {
+     proxy_pass http://localhost:3000;
+     proxy_set_header Host $host;
+     proxy_set_header X-Real-IP $remote_addr;
+     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+     proxy_set_header X-Forwarded-Proto $scheme;
+ }
+```
+
+Une fois cela fait, on crée un raccourci dans le dossier des sites activés avec
+
+```
+sudo ln -s /etc/nginx/sites-available/reverse-proxy /etc/nginx/sites-enabled/
+```
+
+Et on vérifie que la syntax est bonne puis on redémarre nginx avec
+
+```
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+Maintenant que ces étapes sont faites, on peut réellement ajouter NodeJS.
+
+Pour ça, on va crée un fichier `app.js` dans le dossier de notre site avec 
+
+```
 cd /var/www/html/nodejs_app
-nano app.js
+sudo nano app.js
+```
 
+Et on écrit ces lignes de commandes dedans :
+
+```
 const http = require('http');
-const port = 3000;
-
 const server = http.createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('Hello from Node.js!\n');
+  res.writeHead(200, {'Content-Type': 'text/plain'});
+  res.end('Node.js is ALIVE on port 3000!\n');
 });
+server.listen(3000, '127.0.0.1');
+```
 
-server.listen(port, () => {
-  console.log(`Server running at port ${port}`);
-});
+Enfin, on lance PM2 (Le gestionnaire de processus de NodeJS) 
 
-<img src=img-doc/nodejs.png> -->
+```
+pm2 start app.js --name "node-app"
+pm2 save
+```
+
+Et on vérifie que notre application soit bien lancée avec 
+
+```
+curl http://localhost:3000
+```
+
+
+Si on a correctement un message nous indiquant `Node.js is ALIVE`
+
+On peut ajouter NodeJS sur notre site avec le lien `/nodejs_app/`, et on clique sur le bouton à l'accueil.
+
+<img src=img-doc/nodejs.png>
+
+## Bonus
+
+Notre site permet de rediriger vers des liens web.  
+
+Pour cela, lorsque l'on souhaite ajouter une application à notre site, on y ajoute le nom de notre site, et le lien  
+(Attention à bien ajouter `https://` afin que le site détecte que ce soit un site extérieur, et non pas un site ajouté dans ses dossiers.)
+
+<img src=img-doc/add-google.com.png>
+
+<img src=img-doc/google.png>
